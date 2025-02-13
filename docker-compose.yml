@@ -10,14 +10,18 @@ services:
       - open-webui:/app/backend/data
     restart: always
   pipelines:
-    image: ghcr.io/open-webui/pipelines:main
+    # image: ghcr.io/open-webui/pipelines:main
+    build:
+      context: .
+      dockerfile: pipelines.dockerfile
     container_name: pipelines
     ports:
       - "9099:9099"
     extra_hosts:
       - "host.docker.internal:host-gateway"
     volumes:
-      - ./pipelines:/app/pipelines
+      # - ./pipelines:/app/pipelines
+      - pipelines:/app/pipelines
     environment:
       - DEEPSEEK_API_KEY=123dsadsadsa
     restart: always
