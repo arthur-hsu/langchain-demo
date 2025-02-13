@@ -9,6 +9,7 @@ The system allows users to input queries, retrieve relevant information, generat
 - RAG Framework   : [langchain](https://github.com/langchain-ai/langchain) 
 - RAG Bridge      : [open-webui/pipelines](https://github.com/open-webui/pipelines)
 - Vector Database : `TBD` [awesome-vector-database](https://github.com/mileszim/awesome-vector-database) 
+- deepseek-pipeline: [deepseek-pipeline](https://github.com/aporb/webui-extentions) 
 ---
 
 ## Architecture
