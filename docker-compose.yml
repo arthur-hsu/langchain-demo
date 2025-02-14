@@ -23,7 +23,8 @@ services:
       # - ./pipelines:/app/pipelines
       - pipelines:/app/pipelines
     environment:
-      - DEEPSEEK_API_KEY=123dsadsadsa
+      - DEEPSEEK_API_KEY={DEEPSEEK_API_KEY}
+      - GEMINI_API_KEY={GEMINI_API_KEY}
     restart: always
 
 volumes:
