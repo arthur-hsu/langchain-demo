@@ -9,6 +9,7 @@ services:
     volumes:
       - open-webui:/app/backend/data
     restart: always
+
   pipelines:
     # image: ghcr.io/open-webui/pipelines:main
     build:
@@ -27,6 +28,25 @@ services:
       - GEMINI_API_KEY={GEMINI_API_KEY}
     restart: always
 
+  # IMPORTANT: ollama-docker not support apple silicon metal driver
+  # ollama:
+  #   image: ollama/ollama
+  #   container_name: ollama
+  #   restart: unless-stopped
+  #   ports:
+  #     - "11434:11434"
+  #   volumes:
+  #     - ollama_data:/root/.ollama
+  #   entrypoint: ["/bin/sh", "-c"]
+  #   command:
+  #     - > 
+  #       ollama serve & sleep 2 && 
+  #       ollama pull deepseek-ai/deepseek-llm-1.4b-chat &&
+  #       tail -f /dev/null  # 防止容器退出
+
+
+
 volumes:
   open-webui:
   pipelines:
+  # ollama_data:

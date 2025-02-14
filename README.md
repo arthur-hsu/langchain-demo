@@ -6,6 +6,8 @@ The system allows users to input queries, retrieve relevant information, generat
 ## Requirements
 - Web ui          : [open-webui](https://github.com/open-webui/open-webui) 
 - LLM             : [deepseek-r1](https://www.deepseek.com/)
+    - [deepseek-r1](https://www.deepseek.com/)
+    - [deepseek-r1:32b](https://ollama.com/library/deepseek-r1:32b/blobs/6150cb382311) : run by ollama(need 20GB VRAM)
 - RAG Framework   : [langchain](https://github.com/langchain-ai/langchain) 
 - RAG Bridge      : [open-webui/pipelines](https://github.com/open-webui/pipelines)
 - Vector Database : `TBD` [awesome-vector-database](https://github.com/mileszim/awesome-vector-database) 
@@ -46,6 +48,33 @@ Popular options include FAISS and Chroma.
 the vector database will store knowledge base embeddings, enabling langchain to retrieve relevant information and enhance deepseek’s generation capabilities.  
 
 ---
+## RAG Architecture
+1. Get user query
+2. Rewrite user query
+3. Check whether the user's question is a related question
+4. 
+
+![image](./screenshot/rag_architecture.png)
+
+
+## Milestones
+### MileStone 1
+- [x] Setup open-webui server and open-webui/pipelines server
+- [x] Use langchain framework call gemini llm on open-webui via pipelines
+- [-] Deploy deepseek-r1:32b at local laptop(Macbook 32GB)
+- [ ] Call local deepseek llm on open-webui via pipelines
+- [ ] Use LoRa potocol implement Vector Database
+- [ ] Implementation RAG architecture
+- [ ] Test RAG architecture
 
 
 
+
+## Run
+1. `docker-compose up -d`
+2. open `http://localhost:3000/`
+3. ollama pull deepseek-r1:32b
+3. Login to Open WebUI:
+    In Open WebUI: Navigate to the Admin Panel > Settings > Connections > OpenAI API section.
+    Set the API URL to http://host.docker.internal:9099 and the API key to 0p3n-w3bu!. Your pipelines should now be active. IF localhost doesn't work use host.docker.internal
+4. 

@@ -7,13 +7,16 @@ from typing import List, Union, Generator, Iterator
 from pydantic import BaseModel
 import os
 from langchain_openai import ChatOpenAI
+from langchain_ollama import OllamaLLM
 tokens = {}
 if os.path.exists('.env'):
     with open('.env', 'r') as token_file:
         tokens = {name: var for name, var in (line.replace('\n','').split('=', 1) for line in token_file)}
 api_key = os.getenv("GEMINI_API_KEY", tokens.get('GEMINI_API_KEY'))
-model="gemini-2.0-flash"
-base_url="https://generativelanguage.googleapis.com/v1beta/openai/"
+# model="gemini-2.0-flash"
+# base_url="https://generativelanguage.googleapis.com/v1beta/openai/"
+model="deepseek-r1:32b"
+base_url="http://host.docker.internal:11434"
 
 
 class Pipeline:
@@ -58,10 +61,11 @@ class Pipeline:
             print("Title Generation")
             return "langchain llm pipeline"
         else:
-            llm = ChatOpenAI(model=model,api_key=api_key,base_url=base_url)
-            llm_response = llm.invoke(input=user_message)
-            print(llm_response.pretty_print())
-            context = llm_response.content
+            # llm = ChatOpenAI(model=model,api_key='',base_url=base_url)
+            llm = OllamaLLM(model=model, base_url=base_url)
+            llm_response = llm.invoke(user_message)
+            # print(llm_response.pretty_print())
+            context = llm_response.content if hasattr(llm_response, "content") else llm_response
             if not isinstance(context, str):
                 context = context.decode("utf-8")
 
