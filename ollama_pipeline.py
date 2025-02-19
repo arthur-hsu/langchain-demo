@@ -1,25 +1,28 @@
 from typing import List, Union, Generator, Iterator
-from langchain_ollama import ChatOllama
 import os, json
 from pydantic import BaseModel, Field
-from langchain_core.prompts import ChatPromptTemplate
+from langchain_ollama import ChatOllama, OllamaLLM
+from langchain.agents import initialize_agent
+from langchain.agents import AgentType
+from langchain.agents import load_tools
+# # from langchain_community.agent_toolkits.load_tools import load_tools
+# from langchain.agents import AgentExecutor, create_tool_calling_agent
+# from langchain_core.prompts import ChatPromptTemplate
+
 
 in_docker = True if os.getenv("IN_DOCKER", False) is not False else False
 url = "http://host.docker.internal:11434" if in_docker else "http://localhost:11434"
 
 
-
-
 class Pipeline:
     class Valves(BaseModel):
         BASE_URL: str = Field(
-            default = "http://host.docker.internal:11434" if in_docker else "http://localhost:11434",
-            description = "Ollama API的基礎請求地址"
+            default="http://host.docker.internal:11434"
+            if in_docker
+            else "http://localhost:11434",
+            description="Ollama API的基礎請求地址",
         )
-        API_KEY: str = Field(
-            default = "ollama",
-            description = "用於身份驗證的API密鑰"
-        )
+        API_KEY: str = Field(default="ollama", description="用於身份驗證的API密鑰")
         MODEL: str = Field(
             default="deepseek-r1:1.5b",
             description="API请求的模型名称，默认为 deepseek-reasoner ",
@@ -38,34 +41,67 @@ class Pipeline:
         self.name = "ollama pipeline"
         self.valves = self.Valves()
 
-        
-
     def pipe(
         self, user_message: str, model_id: str, messages: List[dict], body: dict
     ) -> Union[str, Generator, Iterator]:
         # This is where you can add your custom pipelines like RAG.
         print(f"pipe:{__name__}")
 
-        model    = self.valves.MODEL
+        model = self.valves.MODEL
         base_url = self.valves.BASE_URL
-        api_key  = self.valves.API_KEY
-
 
         if "user" in body:
-            print("######################################")
-            print(f'# User: {body["user"]["name"]} ({body["user"]["id"]})')
+            print("\n\n\n\n######################################")
+            print(f"# User: {body['user']['name']} ({body['user']['id']})")
             print(f"# Message: {user_message}")
             print(f"# Model: {model}")
             print(json.dumps(body))
-            print("######################################")
-        
-        llm = ChatOllama(model=model, base_url=base_url)
-        
-        return (res.content for res in llm.stream(user_message))
+            print("\n\n\n\n######################################")
+        try:
+            """ This newest version of the pipeline is not working.
+            llm = ChatOllama(model=model, base_url=base_url)
+            prompt = ChatPromptTemplate.from_messages(
+                [
+                    ("system", "You are a helpful assistant"),
+                    ("human", "{input}"),
+                    # Placeholders fill up a **list** of messages
+                    ("placeholder", "{agent_scratchpad}"),
+                ]
+            )
+            tools = load_tools(["serpapi"])
+            agent = create_tool_calling_agent(llm, tools,prompt)
+            agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
+
+            return agent_executor.stream({"input":user_message})
+            """
+            llm = ChatOllama(model=model, base_url=base_url)
+            # agent = initialize_agent(tools, llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, verbose=True)
+            # tools = load_tools(["serpapi"], llm)
+            # agent_executor = initialize_agent(
+            #     tools,
+            #     llm=llm,
+            #     # agent=AgentType.SELF_ASK_WITH_SEARCH,
+            #     agent=AgentType.CHAT_ZERO_SHOT_REACT_DESCRIPTION,
+            #     verbose=True,
+            # )
+            res = llm.stream(user_message)
+
+            if isinstance(llm, ChatOllama):
+                return (r.content for r in res)
+            else:
+                return res
+
+        except Exception as e:
+            return f"Error: {e}"
 
 
 if __name__ == "__main__":
     Pipe = Pipeline()
-    res = Pipe.pipe("你好", "ollama", [], {})
+    res = Pipe.pipe(
+        "What's the date today?",
+        "ollama",
+        [],
+        {},
+    )
     for r in res:
-        print(r.content, end="", flush=True)
+        print(r, end="", flush=True)

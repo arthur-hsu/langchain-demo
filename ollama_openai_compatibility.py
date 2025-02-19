@@ -1,5 +1,5 @@
 from typing import List, Union, Generator, Iterator
-from langchain_openai import ChatOpenAI
+from langchain_openai import ChatOpenAI, OpenAI
 import os, json
 from pydantic import BaseModel, Field
 from langchain_core.prompts import ChatPromptTemplate
