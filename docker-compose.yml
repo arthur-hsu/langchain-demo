@@ -24,26 +24,10 @@ services:
       # - ./pipelines:/app/pipelines
       - pipelines:/app/pipelines
     environment:
-      - DEEPSEEK_API_KEY={DEEPSEEK_API_KEY}
-      - GEMINI_API_KEY={GEMINI_API_KEY}
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - IN_DOCKER=
     restart: always
-
-  # IMPORTANT: ollama-docker not support apple silicon metal driver
-  # ollama:
-  #   image: ollama/ollama
-  #   container_name: ollama
-  #   restart: unless-stopped
-  #   ports:
-  #     - "11434:11434"
-  #   volumes:
-  #     - ollama_data:/root/.ollama
-  #   entrypoint: ["/bin/sh", "-c"]
-  #   command:
-  #     - > 
-  #       ollama serve & sleep 2 && 
-  #       ollama pull deepseek-ai/deepseek-llm-1.4b-chat &&
-  #       tail -f /dev/null  # 防止容器退出
-
 
 
 volumes:
