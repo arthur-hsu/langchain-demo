@@ -56,14 +56,20 @@ the vector database will store knowledge base embeddings, enabling langchain to 
 
 ![image](./screenshot/rag_architecture.png)
 
+## Usage
+1. [Milvus](http://localhost:9091/webui) 
+2. [Open-WebUI](http://localhost:3000/)
+3. [Open-WebUI-Pipelines](http://localhost:9099/)
+
+
 
 ## Milestones
 ### MileStone 1
 - [x] Setup open-webui server and open-webui/pipelines server
 - [x] Use langchain framework call gemini llm on open-webui via pipelines
-- [-] Deploy deepseek-r1:32b at local laptop(Macbook 32GB)
-- [ ] Call local deepseek llm on open-webui via pipelines
-- [ ] Use LoRa potocol implement Vector Database
+- [x] Deploy deepseek-r1:32b at local laptop(Macbook 32GB)
+- [x] Call local deepseek llm on open-webui via pipelines
+- [-] Use LoRa potocol implement Vector Database
 - [ ] Implementation RAG architecture
 - [ ] Test RAG architecture
 
