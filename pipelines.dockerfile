@@ -1,8 +1,3 @@
 FROM ghcr.io/open-webui/pipelines:main
-RUN pip3 install --no-cache-dir \
-    langchain                   \
-    langchain-openai            \
-    langchain-deepseek          \
-    langchain-ollama            \
-    google-search-results       \
-    langchain-community
+RUN cp ./requirements.txt /tmp/requirements.txt
+RUN pip3 install --no-cache-dir -r /tmp/requirements.txt

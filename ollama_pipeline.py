@@ -85,8 +85,9 @@ class Pipeline:
             #     verbose=True,
             # )
             res = llm.stream(user_message)
+            model_integration = llm.__class__.__name__
 
-            if isinstance(llm, ChatOllama):
+            if model_integration.startswith("Chat"):
                 return (r.content for r in res)
             else:
                 return res

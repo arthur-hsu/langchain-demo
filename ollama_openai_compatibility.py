@@ -69,12 +69,17 @@ class Pipeline:
             print("######################################")
         
         llm = ChatOpenAI(model=model, base_url=base_url, api_key=api_key,streaming=True)
+        result = llm.stream(user_message)
+        model_integration = llm.__class__.__name__
         
-        return (res.content for res in llm.stream(user_message))
+        if model_integration.startswith("Chat"):
+            return (r.content for r in result)
+        else:
+            return result
 
 if __name__ == "__main__":
     Pipe = Pipeline()
     res = Pipe.pipe("你好", "ollama", [], {})
     for r in res:
-        print(r.content, end="", flush=True)
+        print(r, end="", flush=True)
 

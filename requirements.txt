@@ -1,0 +1,7 @@
+langchain
+langchain-openai
+langchain-deepseek
+langchain-ollama
+google-search-results
+langchain-community
+langchain-huggingface
