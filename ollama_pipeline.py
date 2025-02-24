@@ -2,13 +2,7 @@ from typing import List, Union, Generator, Iterator
 import os, json
 from pydantic import BaseModel, Field
 from langchain_ollama import ChatOllama, OllamaLLM
-from langchain.agents import initialize_agent
-from langchain.agents import AgentType
-from langchain.agents import load_tools
-
-# # from langchain_community.agent_toolkits.load_tools import load_tools
-# from langchain.agents import AgentExecutor, create_tool_calling_agent
-# from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnablePassthrough
 
 
@@ -60,33 +54,9 @@ class Pipeline:
             print(json.dumps(body))
             print("\n\n\n\n######################################")
         try:
-            """ This newest version of the pipeline is not working.
             llm = ChatOllama(model=model, base_url=base_url)
-            prompt = ChatPromptTemplate.from_messages(
-                [
-                    ("system", "You are a helpful assistant"),
-                    ("human", "{input}"),
-                    # Placeholders fill up a **list** of messages
-                    ("placeholder", "{agent_scratchpad}"),
-                ]
-            )
-            tools = load_tools(["serpapi"])
-            agent = create_tool_calling_agent(llm, tools,prompt)
-            agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
-
-            return agent_executor.stream({"input":user_message})
-            """
-            llm = ChatOllama(model=model, base_url=base_url)
-            # agent = initialize_agent(tools, llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, verbose=True)
-            # tools = load_tools(["serpapi"], llm)
-            # agent_executor = initialize_agent(
-            #     tools,
-            #     llm=llm,
-            #     # agent=AgentType.SELF_ASK_WITH_SEARCH,
-            #     agent=AgentType.CHAT_ZERO_SHOT_REACT_DESCRIPTION,
-            #     verbose=True,
-            # )
-            res = llm.stream(user_message, **data)
+            chain = 
+            res = llm.stream(user_message) | StrOutputParser()
             model_integration = llm.__class__.__name__
 
             if model_integration.startswith("Chat"):

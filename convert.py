@@ -47,7 +47,8 @@ vector_store = Milvus(
     embedding_function=embedding_model,
     collection_name=collection_name,
     # Set index_params if needed
-    index_params={"index_type": "FLAT", "metric_type": "L2"},
+    # index_params={"index_type": "FLAT", "metric_type": "L2"},
+    index_params={"index_type": "FLAT", "metric_type": "IP"},  # 使用 內積(IP) 來匹配
     auto_id=True
 )
 
