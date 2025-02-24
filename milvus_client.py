@@ -1,57 +1,63 @@
-from langchain_milvus import Milvus
 from langchain_huggingface import HuggingFaceEmbeddings
-from langchain.schema import Document
+from langchain_milvus import Milvus
+
 from langchain_openai import ChatOpenAI, OpenAI
 import os
-from langchain.chains import RetrievalQA
+from langchain import hub
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.runnables import RunnablePassthrough
 
-# 1. 設定 Milvus 伺服器
-MILVUS_URI = "http://localhost:19530"
-COLLECTION_NAME = "pdf_embeddings"
-
-# 2. 設定 Hugging Face Embeddings
-model_name = "BAAI/bge-m3"
-model_kwargs = {'device': 'mps'}
-encode_kwargs = {'normalize_embeddings': True}
 
 embedding_model = HuggingFaceEmbeddings(
-    model_name=model_name,
-    model_kwargs=model_kwargs,
-    encode_kwargs=encode_kwargs
+    model_name="BAAI/bge-m3",
+    model_kwargs={"device": "mps"},
+    encode_kwargs={"normalize_embeddings": True},
 )
 
-# 3. 連接 Milvus 向量資料庫
-vector_db = Milvus(
+collection_name = "pdf_embeddings"
+vectorstore = Milvus(
     embedding_function=embedding_model,
-    collection_name=COLLECTION_NAME,
-    connection_args={"uri": MILVUS_URI},
+    collection_name=collection_name,
+    index_params={"index_type": "FLAT", "metric_type": "L2"},
 )
 
-query_text = "LoRaWan Class B 介紹"
-docs = vector_db.similarity_search(query_text, k=5)  # 取前 5 筆最相關的結果
 
-# 印出結果
-print("\n🔍 查詢結果：")
-for i, doc in enumerate(docs):
-    print(f"📄 {i+1}: {doc.page_content}\n")
+in_docker = True if os.getenv("IN_DOCKER", False) is not False else False
+url = "http://host.docker.internal:11434" if in_docker else "http://localhost:11434"
 
 
+# 4. 使用 LangChain OpenAI 調用本地 Ollama
+llm = ChatOpenAI(model="deepseek-r1:14b", base_url=f"{url}/v1", api_key="ollama",streaming=True)
 
-# in_docker = True if os.getenv("IN_DOCKER", False) is not False else False
-# url = "http://host.docker.internal:11434" if in_docker else "http://localhost:11434"
-#
-#
-# # 4. 使用 LangChain OpenAI 調用本地 Ollama
-# llm = ChatOpenAI(model="deepseek-r1:14b", base_url=f"{url}/v1", api_key="ollama",streaming=True)
-#
-#
-# # 5. 建立 RAG 查詢流程
-# retriever = vector_db.as_retriever(search_kwargs={"k": 5})  # 取回 5 個最相關的內容
-# rag_chain = RetrievalQA(llm=llm, retriever=retriever)
-#
-# # 6. 測試 RAG 問答
-# query = "LoRaWan class b 介紹"
-# result = rag_chain.run(query)
-#
-# print("RAG 生成的答案：", result)
-#
+
+
+
+
+
+# See full prompt at https://smith.langchain.com/hub/rlm/rag-prompt
+prompt = hub.pull("rlm/rag-prompt")
+
+
+def format_docs(docs):
+    d = 1
+    for doc in docs:
+        print(f"{d}: {'-'*100}")
+        print(doc.page_content)
+        print("\n")
+        d+=1
+    return "\n\n".join(doc.page_content for doc in docs)
+
+
+qa_chain = (
+    {
+        "context": vectorstore.as_retriever() | format_docs,
+        "question": RunnablePassthrough(),
+    }
+    | prompt
+    | llm
+    | StrOutputParser()
+)
+
+res = qa_chain.stream("LoRaWan class B introduce")
+for r in res:
+    print(r, end="", flush=True)

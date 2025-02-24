@@ -2,6 +2,7 @@ services:
   open-webui:
     image: ghcr.io/open-webui/open-webui:main
     container_name: open-webui
+    # network_mode: "host"
     ports:
       - "3000:8080"
     extra_hosts:
@@ -9,26 +10,27 @@ services:
     volumes:
       - open-webui:/app/backend/data
     restart: always
+    # privileged: true
 
-  pipelines:
-    # image: ghcr.io/open-webui/pipelines:main
-    build:
-      context: .
-      dockerfile: pipelines.dockerfile
-    container_name: pipelines
-    ports:
-      - "9099:9099"
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    volumes:
-      # - ./pipelines:/app/pipelines
-      - pipelines:/app/pipelines
-    environment:
-      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
-      - GEMINI_API_KEY=${GEMINI_API_KEY}
-      - SERPAPI_API_KEY=${SERPAPI_API_KEY}
-      - IN_DOCKER=
-    restart: always
+  # pipelines:
+  #   # image: ghcr.io/open-webui/pipelines:main
+  #   build:
+  #     context: .
+  #     dockerfile: pipelines.dockerfile
+  #   container_name: pipelines
+  #   ports:
+  #     - "9099:9099"
+  #   extra_hosts:
+  #     - "host.docker.internal:host-gateway"
+  #   volumes:
+  #     # - ./pipelines:/app/pipelines
+  #     - pipelines:/app/pipelines
+  #   environment:
+  #     - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
+  #     - GEMINI_API_KEY=${GEMINI_API_KEY}
+  #     - SERPAPI_API_KEY=${SERPAPI_API_KEY}
+  #     - IN_DOCKER=
+  #   restart: always
 
   etcd:
     container_name: milvus-etcd
@@ -91,7 +93,7 @@ services:
 
 volumes:
   open-webui:
-  pipelines:
+  # pipelines:
   # ollama_data:
 
 networks:

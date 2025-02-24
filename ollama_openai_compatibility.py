@@ -2,14 +2,46 @@ from typing import List, Union, Generator, Iterator
 from langchain_openai import ChatOpenAI, OpenAI
 import os, json
 from pydantic import BaseModel, Field
-from langchain_core.prompts import ChatPromptTemplate
+from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_milvus import Milvus
+from langchain import hub
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.runnables import RunnablePassthrough
 
 in_docker = True if os.getenv("IN_DOCKER", False) is not False else False
 url = "http://host.docker.internal:11434" if in_docker else "http://localhost:11434"
 
 
 
+
+
+
 class Pipeline:
+    embedding_model = HuggingFaceEmbeddings(
+        model_name="BAAI/bge-m3",
+        model_kwargs={"device": "mps"},
+        encode_kwargs={"normalize_embeddings": True},
+    )
+
+    collection_name = "pdf_embeddings"
+    vectorstore = Milvus(
+        embedding_function = embedding_model,
+        collection_name    = collection_name,
+        index_params       = {"index_type": "FLAT", "metric_type": "L2"},
+    )
+
+    # See full prompt at https://smith.langchain.com/hub/rlm/rag-prompt
+    prompt = hub.pull("rlm/rag-prompt")
+    def format_docs(self, docs):
+        d = 1
+        for doc in docs:
+            print(f"{d}: {'-'*100}")
+            print(doc.page_content)
+            print("\n")
+            d+=1
+        return "\n\n".join(doc.page_content for doc in docs)
+
+
     class Valves(BaseModel):
         BASE_URL: str = Field(
             default = f"{url}/v1",
@@ -20,7 +52,7 @@ class Pipeline:
             description = "用於身份驗證的API密鑰"
         )
         MODEL: str = Field(
-            default="deepseek-r1:1.5b",
+            default="deepseek-r1:14b",
             description="API请求的模型名称，默认为 deepseek-reasoner ",
         )
         MODEL_DISPLAY_NAME: str = Field(
@@ -69,13 +101,22 @@ class Pipeline:
             print("######################################")
         
         llm = ChatOpenAI(model=model, base_url=base_url, api_key=api_key,streaming=True)
-        result = llm.stream(user_message)
-        model_integration = llm.__class__.__name__
-        
-        if model_integration.startswith("Chat"):
-            return (r.content for r in result)
-        else:
-            return result
+        # result = llm.stream(user_message)
+        qa_chain = (
+            {
+                "context": self.vectorstore.as_retriever() | self.format_docs,
+                "question": RunnablePassthrough(),
+            }
+            | self.prompt
+            | llm
+            | StrOutputParser()
+        )
+
+        res = qa_chain.stream(user_message)
+        return res
+
+
+
 
 if __name__ == "__main__":
     Pipe = Pipeline()

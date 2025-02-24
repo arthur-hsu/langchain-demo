@@ -5,9 +5,11 @@ from langchain_ollama import ChatOllama, OllamaLLM
 from langchain.agents import initialize_agent
 from langchain.agents import AgentType
 from langchain.agents import load_tools
+
 # # from langchain_community.agent_toolkits.load_tools import load_tools
 # from langchain.agents import AgentExecutor, create_tool_calling_agent
 # from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.runnables import RunnablePassthrough
 
 
 in_docker = True if os.getenv("IN_DOCKER", False) is not False else False
@@ -84,7 +86,7 @@ class Pipeline:
             #     agent=AgentType.CHAT_ZERO_SHOT_REACT_DESCRIPTION,
             #     verbose=True,
             # )
-            res = llm.stream(user_message)
+            res = llm.stream(user_message, **data)
             model_integration = llm.__class__.__name__
 
             if model_integration.startswith("Chat"):
@@ -98,11 +100,29 @@ class Pipeline:
 
 if __name__ == "__main__":
     Pipe = Pipeline()
+
+    data = {
+        "stream": False,
+        "model": "ollama_openai_compatibility",
+        "messages": [
+            {
+                "role": "user",
+                "content": '### Task:\nGenerate a concise, 3-5 word title with an emoji summarizing the chat history.\n### Guidelines:\n- The title should clearly represent the main theme or subject of the conversation.\n- Use emojis that enhance understanding of the topic, but avoid quotation marks or special formatting.\n- Write the title in the chat\'s primary language; default to English if multilingual.\n- Prioritize accuracy over excessive creativity; keep it clear and simple.\n### Output:\nJSON format: { "title": "your concise title here" }\n### Examples:\n- { "title": "\ud83d\udcc9 Stock Market Trends" },\n- { "title": "\ud83c\udf6a Perfect Chocolate Chip Recipe" },\n- { "title": "Evolution of Music Streaming" },\n- { "title": "Remote Work Productivity Tips" },\n- { "title": "Artificial Intelligence in Healthcare" },\n- { "title": "\ud83c\udfae Video Game Development Insights" }\n### Chat History:\n<chat_history>\nUSER: \u4ecb\u7d39\u7f8e\u570b\u6b77\u53f2\nASSISTANT: I\'m sorry, but the provided context doesn\'t include any information related to American history.\n</chat_history>',
+            }
+        ],
+        "user": {
+            "name": "arthur",
+            "id": "5c7bf72a-fe8c-42f8-979e-02a0ae1917b3",
+            "email": "aaa890177@gmail.com",
+            "role": "admin",
+        },
+        "max_tokens": 1000,
+    }
     res = Pipe.pipe(
-        "What's the date today?",
+        "介紹美國歷史",
         "ollama",
         [],
-        {},
+        data,
     )
     for r in res:
         print(r, end="", flush=True)
