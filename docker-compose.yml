@@ -2,7 +2,6 @@ services:
   open-webui:
     image: ghcr.io/open-webui/open-webui:main
     container_name: open-webui
-    # network_mode: "host"
     ports:
       - "3000:8080"
     extra_hosts:
@@ -10,8 +9,8 @@ services:
     volumes:
       - open-webui:/app/backend/data
     restart: always
-    # privileged: true
 
+  # change pipelines to local pc run
   # pipelines:
   #   # image: ghcr.io/open-webui/pipelines:main
   #   build:
