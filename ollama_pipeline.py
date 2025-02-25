@@ -27,7 +27,7 @@ class Pipeline:
             default="Ollama api model",
             description="模型名称，默认为 deepseek-reasoner-model",
         )
-
+    
     def __init__(self):
         # Optionally, you can set the id and name of the pipeline.
         # Best practice is to not specify the id so that it can be automatically inferred from the filename, so that users can install multiple versions of the same pipeline.
@@ -36,14 +36,14 @@ class Pipeline:
         # self.id = "ollama_pipeline"
         self.name = "ollama pipeline"
         self.valves = self.Valves()
-
+    
     def pipe(
         self, user_message: str, model_id: str, messages: List[dict], body: dict
     ) -> Union[str, Generator, Iterator]:
         # This is where you can add your custom pipelines like RAG.
         print(f"pipe:{__name__}")
 
-        model = self.valves.MODEL
+        model    = self.valves.MODEL
         base_url = self.valves.BASE_URL
 
         if "user" in body:
@@ -55,7 +55,6 @@ class Pipeline:
             print("\n\n\n\n######################################")
         try:
             llm = ChatOllama(model=model, base_url=base_url)
-            chain = 
             res = llm.stream(user_message) | StrOutputParser()
             model_integration = llm.__class__.__name__
 

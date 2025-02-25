@@ -16,7 +16,6 @@ url = "http://host.docker.internal:11434" if in_docker else "http://localhost:11
 
 
 
-
 class RetrieverPipeline:
     def __init__(self, llm, vectorstore):
         self.llm = llm
