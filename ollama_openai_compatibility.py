@@ -1,10 +1,9 @@
 from typing import List, Union, Generator, Iterator
-from langchain_openai import ChatOpenAI, OpenAI
-import os, json
+from langchain_openai import ChatOpenAI
+import os, json, re
 from pydantic import BaseModel, Field
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_milvus import Milvus
-from langchain import hub
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnablePassthrough, RunnableMap, RunnableParallel, RunnableLambda
 from langchain_core.prompts import PromptTemplate, SystemMessagePromptTemplate, HumanMessagePromptTemplate, ChatPromptTemplate
@@ -18,25 +17,31 @@ url = "http://host.docker.internal:11434" if in_docker else "http://localhost:11
 
 class RetrieverPipeline:
     def __init__(self, llm, vectorstore):
-        self.llm = llm
+        self.llm         = llm
         self.vectorstore = vectorstore
 
         # **1. 設定 LLM 提示詞**
         self.question_prompt = PromptTemplate.from_template(
-            "Analyze the following question, extract key terms, and rephrase it to optimize for vector database retrieval.\n"
-            "Avoid overly verbose descriptions and ensure the query accurately matches relevant information.\n"
-            "Original Question: {question}\n"
-            "Optimized Query for Retrieval:"
+            """
+            Analyze the following question, extract key terms, and rephrase it to optimize for vector database retrieval.
+            Avoid overly verbose descriptions and ensure the query accurately matches relevant information.
+
+            ### Output language: English
+            
+            ### Original Question: {question}
+
+            ### Output: String
+            """
         )
 
-        # **2. 定義處理步驟**
-        self.question_refiner = self.question_prompt | self.llm | StrOutputParser() | self.debug_and_return
-        self.context_chain = self.question_refiner | RunnableLambda(self.debug_query) | self.format_docs
 
     def debug_and_return(self, question):
         """Debug: 輸出 LLM 優化後的問題"""
-        print("\n🔍 LLM 思考後的問題:", question)
-        return question
+        # print("\n🔍 LLM 思考後的問題:", question)
+        cleaned_text = re.sub(r'<think>.*?</think>', '', question, flags=re.DOTALL)
+        return cleaned_text
+            
+
 
     def debug_query(self, q):
         """Debug: 輸出 LLM 優化後的查詢，並執行檢索"""
@@ -54,6 +59,9 @@ class RetrieverPipeline:
 
     def retrieve_context(self, question):
         """執行 LLM 轉換問題 -> 檢索 -> 格式化文檔"""
+        # **2. 定義處理步驟**
+        self.question_refiner = self.question_prompt | self.llm | StrOutputParser() | self.debug_and_return
+        self.context_chain    = self.question_refiner | RunnableLambda(self.debug_query) | self.format_docs
         return self.context_chain.invoke(question)
 
 
@@ -61,7 +69,7 @@ class RetrieverPipeline:
 class Pipeline:
     embedding_model = HuggingFaceEmbeddings(
         model_name="BAAI/bge-m3",
-        model_kwargs={"device": "mps"},
+        # model_kwargs={"device": "mps"},
         encode_kwargs={"normalize_embeddings": True},
     )
 
@@ -120,31 +128,56 @@ class Pipeline:
         # The identifier must be unique across all pipelines.
         # The identifier must be an alphanumeric string that can include underscores or hyphens. It cannot contain spaces, special characters, slashes, or backslashes.
         # self.id = "ollama_pipeline"
-        self.name = "Ollama OpenAI compatibility"
-        self.valves = self.Valves()
+        self.name     = "Ollama OpenAI compatibility"
+        self.valves   = self.Valves()
+        self.main_model    = self.valves.MODEL
+        self.base_url = self.valves.BASE_URL
+        self.api_key  = self.valves.API_KEY
 
+
+    def return_title_and_tags(self, user_message):
+        llm = ChatOpenAI(
+            model=self.main_model,
+            base_url=self.base_url,
+            api_key=self.api_key,
+        )
+        def remove_think(result):
+            cleaned_text = re.sub(r'<think>.*?</think>', '', result, flags=re.DOTALL)
+            print(f"result: {cleaned_text}")
+
+            return cleaned_text
+
+        chain = llm | StrOutputParser() | remove_think
+        return chain.invoke(user_message)
         
+    def is_system_query(self, user_message):
+        short_query = [
+            "Generate a concise, 3-5 word title with an emoji summarizing the chat history.",
+            "Generate 1-3 broad tags categorizing the main themes of the chat history, along with 1-3 more specific subtopic tags."
+        ]
 
-    def pipe(
-        self, user_message: str, model_id: str, messages: List[dict], body: dict
-    ) -> Union[str, Generator, Iterator]:
+        parsar_text = f"{'|'.join(short_query)}"
+        parsar = re.compile(f"{parsar_text}")
+        parsar_result = parsar.search(user_message)
+        if parsar_result:
+            text = parsar_result.group()
+            print(f"\n\n############### {text} ################")
+            return self.return_title_and_tags(user_message)
+        
+    def pipe( self, user_message: str, model_id: str, messages: List[dict], body: dict) -> Union[str, Generator, Iterator]:
         # This is where you can add your custom pipelines like RAG.
-        print(f"pipe:{__name__}")
-
-        model    = self.valves.MODEL
-        base_url = self.valves.BASE_URL
-        api_key  = self.valves.API_KEY
-
 
         if "user" in body:
             print("######################################")
-            print(f'# User: {body["user"]["name"]} ({body["user"]["id"]})')
-            print(f"# Message: {user_message}")
-            print(f"# Model: {model}")
-            print(json.dumps(body))
+            print(f'# User: {body["user"]["name"]} ({body["user"]["id"]})\n')
+            print(f"# Message: {user_message}\n")
+            print(f"# Model: {self.main_model}\n")
             print("######################################")
-        
-        llm = ChatOpenAI(model=model, base_url=base_url, api_key=api_key,streaming=True)
+        is_system_query = self.is_system_query(user_message)
+        if is_system_query:
+            return is_system_query
+
+        llm = ChatOpenAI(model=self.main_model, base_url=self.base_url, api_key=self.api_key,streaming=True)
         # result = llm.stream(user_message)
         def print_prompt(q):
             print(f"Question: {q}\n")
@@ -154,7 +187,7 @@ class Pipeline:
         qa_chain = (
             {
                 "question": RunnablePassthrough(),  # 保留原始問題
-                "context": RunnableLambda(lambda q: RetrieverPipeline(llm, self.vectorstore).retrieve_context(q))
+                "context": RunnableLambda(lambda question: RetrieverPipeline(llm, self.vectorstore).retrieve_context(question))
             }
             | self.prompt
             | print_prompt
@@ -168,9 +201,10 @@ class Pipeline:
 
 
 
+
 if __name__ == "__main__":
     Pipe = Pipeline()
-    res = Pipe.pipe("你好", "ollama", [], {})
+    res = Pipe.pipe("介紹class b beacon 流程", "ollama", [], {})
     for r in res:
         print(r, end="", flush=True)
 

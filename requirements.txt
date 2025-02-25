@@ -1,7 +1,12 @@
+pymupdf
 google-search-results
+huggingface_hub[cli]
 langchain
 langchain-openai
 langchain-deepseek
+langchain-community
 langchain-ollama
 langchain-community
+langchain-huggingface
+langchain-milvus
 langchain-huggingface

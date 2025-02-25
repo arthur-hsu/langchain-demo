@@ -26,14 +26,14 @@ pdf_path = "./resource/ts001-1-0-4-lorawan-l2-1-0-4-specification.pdf"
 documents = PyMuPDFLoader(pdf_path).load()
 
 # 設定文字切割
-text_splitter = RecursiveCharacterTextSplitter(chunk_size=2000, chunk_overlap=200)
+text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
 docs = text_splitter.split_documents(documents)
 
 
 
 embedding_model = HuggingFaceEmbeddings(
     model_name="BAAI/bge-m3",
-    model_kwargs={"device": "mps"},
+    # model_kwargs={"device": "mps"},
     encode_kwargs={"normalize_embeddings": True},
     show_progress = True,
 )

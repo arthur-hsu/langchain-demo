@@ -12,7 +12,7 @@ from langchain_core.prompts import PromptTemplate, SystemMessagePromptTemplate, 
 
 embedding_model = HuggingFaceEmbeddings(
     model_name="BAAI/bge-m3",
-    model_kwargs={"device": "mps"},
+    # model_kwargs={"device": "mps"},
     encode_kwargs={"normalize_embeddings": True},
 )
 
